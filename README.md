@@ -1,5 +1,5 @@
 # mapcast
-Convert map[string]string into map[string]interface using a reference struct. Optionally expecting json field name. Optionally map to bson field name. 
+Convert `map[string]string` into `map[string]interface` using a reference struct to sniff types. Optionally can expect the struct's json tag names. Optionally can returned data to `bson` tag name. 
 
 # WHY?
 
