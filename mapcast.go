@@ -3,16 +3,99 @@ package mapcast
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	"strconv"
 	"strings"
-"gopkg.in/mgo.v2/bson"
 )
 
-type namerFunc func(reflect.StructField) string
-type renamerFunc func(string, reflect.StructField) string
+type inputFieldNamer func(reflect.StructField) string
+type outputFieldNamer func(string, reflect.StructField) string
 
-func cast(inMap map[string]string, target interface{}, fieldNamer namerFunc, fieldRenamer renamerFunc) (outMap map[string]interface{}) {
+type MapCaster struct {
+	timeFormat  string
+	inputNamer  inputFieldNamer
+	outputNamer outputFieldNamer
+}
+
+func NewMapCaster() *MapCaster {
+	return new(MapCaster)
+}
+
+func (m *MapCaster) TimeFormat(format string) {
+	m.timeFormat = format
+}
+
+func (m *MapCaster) StdInput() {
+	m.inputNamer = stdInputFieldNamer
+}
+
+func (m *MapCaster) StdOutput() {
+	m.outputNamer = stdOutputFieldRenamer
+}
+
+func (m *MapCaster) JsonInput() {
+	m.inputNamer = jsonInputFieldNamer
+}
+
+func (m *MapCaster) BsonOutput() {
+	m.outputNamer = bsonOutputFieldRenamer
+}
+
+func (m *MapCaster) Cast(inMap map[string]string, target interface{}) map[string]interface{} {
+	return cast(inMap, target, m.inputNamer, m.outputNamer)
+}
+
+func stdInputFieldNamer(field reflect.StructField) string {
+	return field.Name
+}
+
+func stdOutputFieldRenamer(stdName string, field reflect.StructField) string {
+	return stdName
+}
+
+func jsonInputFieldNamer(field reflect.StructField) string {
+	t := field.Tag.Get("json")
+	tArr := strings.Split(t, ",")
+
+	fieldName := field.Name
+
+	if len(tArr) > 0 && len(tArr[0]) > 0 {
+		switch tArr[0] {
+		case "-":
+			return ""
+		default:
+			return tArr[0]
+		}
+	}
+	return fieldName
+}
+
+func bsonOutputFieldRenamer(stdName string, field reflect.StructField) string {
+	t := field.Tag.Get("bson")
+	tArr := strings.Split(t, ",")
+
+	fieldName := field.Name
+
+	if len(tArr) > 0 && len(tArr[0]) > 0 {
+		return tArr[0]
+	}
+	return fieldName
+}
+
+func Cast(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
+	return cast(inMap, target, stdInputFieldNamer, stdOutputFieldRenamer)
+}
+
+func CastViaJson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
+	return cast(inMap, target, jsonInputFieldNamer, stdOutputFieldRenamer)
+}
+
+func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
+	return cast(inMap, target, jsonInputFieldNamer, bsonOutputFieldRenamer)
+}
+
+func cast(inMap map[string]string, target interface{}, fieldNamer inputFieldNamer, fieldRenamer outputFieldNamer) (outMap map[string]interface{}) {
 	outMap = make(map[string]interface{})
 
 	structElems := reflect.TypeOf(target).Elem()
@@ -30,56 +113,6 @@ func cast(inMap map[string]string, target interface{}, fieldNamer namerFunc, fie
 		}
 	}
 	return
-}
-
-func stdFieldNamer(field reflect.StructField) string {
-	return field.Name
-}
-
-func stdFieldRenamer(stdName string, field reflect.StructField) string {
-	return stdName
-}
-
-
-func jsonFieldNamer(field reflect.StructField) string {
-	t := field.Tag.Get("json")
-	tArr := strings.Split(t, ",")
-
-	fieldName := field.Name
-
-	if len(tArr) > 0 && len(tArr[0]) > 0 {
-		switch tArr[0] {
-		case "-":
-			return ""
-		default:
-			return tArr[0]
-		}
-	}
-	return fieldName
-}
-
-func bsonFieldRenamer(stdName string, field reflect.StructField) string {
-	t := field.Tag.Get("bson")
-	tArr := strings.Split(t, ",")
-
-	fieldName := field.Name
-
-	if len(tArr) > 0 && len(tArr[0]) > 0 {
-		return tArr[0]
-	}
-	return fieldName
-}
-
-func Cast(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, stdFieldNamer, stdFieldRenamer)
-}
-
-func CastViaJson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonFieldNamer, stdFieldRenamer)
-}
-
-func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonFieldNamer, bsonFieldRenamer)
 }
 
 func stringToType(val string, valType interface{}) (interface{}, error) {
