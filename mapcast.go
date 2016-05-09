@@ -67,7 +67,7 @@ func jsonFieldNamer(field reflect.StructField) string {
 			return tArr[0]
 		}
 	}
-	return fieldName
+	return strings.ToLower(fieldName)
 }
 
 func bsonFieldNamer(field reflect.StructField) string {
@@ -79,7 +79,7 @@ func bsonFieldNamer(field reflect.StructField) string {
 	if len(tArr) > 0 && len(tArr[0]) > 0 {
 		return tArr[0]
 	}
-	return fieldName
+	return strings.ToLower(fieldName)
 }
 
 func protoFieldNamer(field reflect.StructField) string {
