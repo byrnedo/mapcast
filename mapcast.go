@@ -9,13 +9,12 @@ import (
 	"strings"
 )
 
-type inputFieldNamer func(reflect.StructField) string
-type outputFieldNamer func(string, reflect.StructField) string
+type fieldNamer func(reflect.StructField) string
 
 type MapCaster struct {
 	timeFormat  string
-	inputNamer  inputFieldNamer
-	outputNamer outputFieldNamer
+	inputNamer  fieldNamer
+	outputNamer fieldNamer
 }
 
 func NewMapCaster() *MapCaster {
@@ -27,38 +26,34 @@ func (m *MapCaster) TimeFormat(format string) {
 }
 
 func (m *MapCaster) StdInput() {
-	m.inputNamer = stdInputFieldNamer
+	m.inputNamer = stdFieldNamer
 }
 
 func (m *MapCaster) StdOutput() {
-	m.outputNamer = stdOutputFieldRenamer
+	m.outputNamer = stdFieldNamer
 }
 
 func (m *MapCaster) JsonInput() {
-	m.inputNamer = jsonInputFieldNamer
+	m.inputNamer = jsonFieldNamer
 }
 
 func (m *MapCaster) BsonOutput() {
-	m.outputNamer = bsonOutputFieldRenamer
+	m.outputNamer = bsonFieldNamer
 }
 
-func (m *MapCaster) ProtoOutput() {
-	m.outputNamer = protoOutputFieldRenamer
+func (m *MapCaster) ProtoInput() {
+	m.inputNamer = protoFieldNamer
 }
 
 func (m *MapCaster) Cast(inMap map[string]string, target interface{}) map[string]interface{} {
 	return cast(inMap, target, m.inputNamer, m.outputNamer)
 }
 
-func stdInputFieldNamer(field reflect.StructField) string {
+func stdFieldNamer(field reflect.StructField) string {
 	return field.Name
 }
 
-func stdOutputFieldRenamer(stdName string, field reflect.StructField) string {
-	return stdName
-}
-
-func jsonInputFieldNamer(field reflect.StructField) string {
+func jsonFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("json")
 	tArr := strings.Split(t, ",")
 
@@ -75,7 +70,7 @@ func jsonInputFieldNamer(field reflect.StructField) string {
 	return fieldName
 }
 
-func bsonOutputFieldRenamer(stdName string, field reflect.StructField) string {
+func bsonFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("bson")
 	tArr := strings.Split(t, ",")
 
@@ -87,7 +82,7 @@ func bsonOutputFieldRenamer(stdName string, field reflect.StructField) string {
 	return fieldName
 }
 
-func protoOutputFieldRenamer(stdName string, field reflect.StructField) string {
+func protoFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("protobuf")
 	tArr := strings.Split(t, ",")
 
@@ -104,22 +99,22 @@ func protoOutputFieldRenamer(stdName string, field reflect.StructField) string {
 }
 
 func Cast(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, stdInputFieldNamer, stdOutputFieldRenamer)
+	return cast(inMap, target, stdFieldNamer, stdFieldNamer)
 }
 
 func CastViaJson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonInputFieldNamer, stdOutputFieldRenamer)
+	return cast(inMap, target, jsonFieldNamer, stdFieldNamer)
 }
 
 func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonInputFieldNamer, bsonOutputFieldRenamer)
+	return cast(inMap, target, jsonFieldNamer, bsonFieldNamer)
 }
 
-func CastViaJsonToProto(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonInputFieldNamer, protoOutputFieldRenamer)
+func CastViaProtoToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
+	return cast(inMap, target, protoFieldNamer, bsonFieldNamer)
 }
 
-func cast(inMap map[string]string, target interface{}, fieldNamer inputFieldNamer, fieldRenamer outputFieldNamer) (outMap map[string]interface{}) {
+func cast(inMap map[string]string, target interface{}, fieldNamer fieldNamer, fieldRenamer fieldNamer) (outMap map[string]interface{}) {
 	outMap = make(map[string]interface{})
 
 	structElems := reflect.TypeOf(target).Elem()
@@ -131,7 +126,7 @@ func cast(inMap map[string]string, target interface{}, fieldNamer inputFieldName
 
 		if origVal, found := inMap[fieldName]; found == true {
 			if iVal, err := stringToType(fmt.Sprintf("%s", origVal), structValues.Field(i).Interface()); err == nil {
-				fieldName = fieldRenamer(fieldName, structElems.Field(i))
+				fieldName = fieldRenamer(structElems.Field(i))
 				outMap[fieldName] = iVal
 			}
 		}

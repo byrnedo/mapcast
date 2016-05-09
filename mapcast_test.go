@@ -84,27 +84,27 @@ func TestJsonToBsonMapCast(t *testing.T) {
 
 }
 
-func TestJsonToProtoMapCast(t *testing.T) {
+func TestCastViaProtoToBson(t *testing.T) {
 
 	inputData := map[string]string{
-		"jstring":   "string",
-		"jint":      "-1",
-		"juint":     "2",
-		"jobjectid": bson.NewObjectId().Hex(),
+		"pstring":   "string",
+		"pint":      "-1",
+		"puint":     "2",
+		"pobjectid": bson.NewObjectId().Hex(),
 	}
 
 	caster := NewMapCaster()
-	caster.JsonInput()
-	caster.ProtoOutput()
+	caster.ProtoInput()
+	caster.BsonOutput()
 
 	targetStruct := inputStruct{}
 	outputMap := caster.Cast(inputData, &targetStruct)
 
 	expectedOutput := map[string]interface{}{
-		"pstring":   "string",
-		"pint":      -1,
-		"puint":     uint(2),
-		"pobjectid": bson.ObjectIdHex(inputData["jobjectid"]),
+		"bstring":   "string",
+		"bint":      -1,
+		"buint":     uint(2),
+		"bobjectid": bson.ObjectIdHex(inputData["pobjectid"]),
 	}
 
 	for key, val := range expectedOutput {
