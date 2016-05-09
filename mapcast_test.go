@@ -7,6 +7,7 @@ import (
 
 type inputStruct struct {
 	String   string        `json:"jstring" bson:"bstring" protobuf:"bytes,1,opt,name=pstring"`
+	NotTagged string
 	Int      int           `json:"jint" bson:"bint" protobuf:"bytes,1,opt,name=pint"`
 	Uint     uint          `json:"juint" bson:"buint" protobuf:"bytes,1,opt,name=puint"`
 	ObjectId bson.ObjectId `json:"jobjectid" bson:"bobjectid" protobuf:"bytes,1,opt,name=pobjectid"`
@@ -18,6 +19,7 @@ func TestStdMapCast(t *testing.T) {
 		"String":   "string",
 		"Int":      "-1",
 		"Uint":     "2",
+		"NotTagged" : "not-tagged",
 		"ObjectId": bson.NewObjectId().Hex(),
 	}
 
@@ -32,6 +34,7 @@ func TestStdMapCast(t *testing.T) {
 		"String":   "string",
 		"Int":      -1,
 		"Uint":     uint(2),
+		"NotTagged" : "not-tagged",
 		"ObjectId": bson.ObjectIdHex(inputData["ObjectId"]),
 	}
 
@@ -55,6 +58,7 @@ func TestJsonToBsonMapCast(t *testing.T) {
 		"jint":      "-1",
 		"juint":     "2",
 		"jobjectid": bson.NewObjectId().Hex(),
+		"nottagged" : "not-tagged",
 	}
 
 	caster := NewMapCaster()
@@ -69,6 +73,7 @@ func TestJsonToBsonMapCast(t *testing.T) {
 		"bint":      -1,
 		"buint":     uint(2),
 		"bobjectid": bson.ObjectIdHex(inputData["jobjectid"]),
+		"nottagged" : "not-tagged",
 	}
 
 	for key, val := range expectedOutput {
@@ -91,6 +96,7 @@ func TestCastViaProtoToBson(t *testing.T) {
 		"pint":      "-1",
 		"puint":     "2",
 		"pobjectid": bson.NewObjectId().Hex(),
+		"NotTagged" : "not-tagged",
 	}
 
 	caster := NewMapCaster()
@@ -105,6 +111,7 @@ func TestCastViaProtoToBson(t *testing.T) {
 		"bint":      -1,
 		"buint":     uint(2),
 		"bobjectid": bson.ObjectIdHex(inputData["pobjectid"]),
+		"nottagged" : "not-tagged",
 	}
 
 	for key, val := range expectedOutput {
