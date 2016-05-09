@@ -42,6 +42,10 @@ func (m *MapCaster) BsonOutput() {
 	m.outputNamer = bsonOutputFieldRenamer
 }
 
+func (m *MapCaster) ProtoOutput() {
+	m.outputNamer = protoOutputFieldRenamer
+}
+
 func (m *MapCaster) Cast(inMap map[string]string, target interface{}) map[string]interface{} {
 	return cast(inMap, target, m.inputNamer, m.outputNamer)
 }
@@ -83,6 +87,22 @@ func bsonOutputFieldRenamer(stdName string, field reflect.StructField) string {
 	return fieldName
 }
 
+func protoOutputFieldRenamer(stdName string, field reflect.StructField) string {
+	t := field.Tag.Get("protobuf")
+	tArr := strings.Split(t, ",")
+
+	fieldName := field.Name
+
+	for _, sec := range tArr {
+		sec = strings.TrimSpace(sec)
+		if strings.HasPrefix(sec, "name=") && len(sec) > 5 {
+			return sec[5:]
+		}
+
+	}
+	return fieldName
+}
+
 func Cast(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
 	return cast(inMap, target, stdInputFieldNamer, stdOutputFieldRenamer)
 }
@@ -93,6 +113,10 @@ func CastViaJson(inMap map[string]string, target interface{}) (outMap map[string
 
 func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
 	return cast(inMap, target, jsonInputFieldNamer, bsonOutputFieldRenamer)
+}
+
+func CastViaJsonToProto(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
+	return cast(inMap, target, jsonInputFieldNamer, protoOutputFieldRenamer)
 }
 
 func cast(inMap map[string]string, target interface{}, fieldNamer inputFieldNamer, fieldRenamer outputFieldNamer) (outMap map[string]interface{}) {
