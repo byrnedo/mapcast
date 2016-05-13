@@ -30,18 +30,18 @@ Casts `map[string]string` referencing any `struct` to `map[string]interface` exp
     myInput := map[string]string{"input_name": "345"}
     
     Cast(myInput, myStruct{}) 
-    // returns map["Field" : 345]
+    // returns map{"Field" : 345}
     
     CastViaJson(myInput, myStruct{}) 
-    // returns map["input_name" : 345]
+    // returns map{"input_name" : 345}
     
     CastViaJsonToBson(myInput, myStruct{}) 
-    // returns map["output_name" : 345]
+    // returns map{"output_name" : 345}
     
     myMultiInput := map[string][]string{"input_name" : []string{"345}}
     
-    CastMultiViaJsonToBson(myInput, myStruct{}) 
-    // returns map["output_name" : []int{345}]
+    CastMultiViaJsonToBson(myMultiInput, myStruct{}) 
+    // returns map{"output_name" : []int[345]}
 
 ### Supported Types
 
