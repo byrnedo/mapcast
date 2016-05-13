@@ -49,6 +49,10 @@ func (m *MapCaster) Cast(inMap map[string]string, target interface{}) map[string
 	return cast(inMap, target, m.inputNamer, m.outputNamer)
 }
 
+func (m *MapCaster) CastArrayValue(inMap map[string][]string, target interface{}) map[string][]interface{} {
+	return castSlice(inMap, target, m.inputNamer, m.outputNamer)
+}
+
 func stdFieldNamer(field reflect.StructField) string {
 	return field.Name
 }
@@ -112,6 +116,46 @@ func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[
 
 func CastViaProtoToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
 	return cast(inMap, target, protoFieldNamer, bsonFieldNamer)
+}
+
+func CastMultiple(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
+	return castSlice(inMap, target, stdFieldNamer, stdFieldNamer)
+}
+
+func CastMultipleViaJson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
+	return castSlice(inMap, target, jsonFieldNamer, stdFieldNamer)
+}
+
+func CastMultipleViaJsonToBson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
+	return castSlice(inMap, target, jsonFieldNamer, bsonFieldNamer)
+}
+
+func CastMultipleViaProtoToBson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
+	return castSlice(inMap, target, protoFieldNamer, bsonFieldNamer)
+}
+
+func castSlice(inMap map[string][]string, target interface{}, fieldNamer fieldNamer, fieldRenamer fieldNamer) (outMap map[string][]interface{}) {
+	outMap = make(map[string][]interface{})
+
+	structElems := reflect.TypeOf(target).Elem()
+	structValues := reflect.ValueOf(target).Elem()
+
+	for i := 0; i < structElems.NumField(); i++ {
+
+		fieldName := fieldNamer(structElems.Field(i))
+
+		if origVals, found := inMap[fieldName]; found == true {
+			outputSlice := make([]interface{}, 0)
+			fieldName = fieldRenamer(structElems.Field(i))
+			for _, origVal := range origVals {
+				if iVal, err := stringToType(fmt.Sprintf("%s", origVal), structValues.Field(i).Interface()); err == nil {
+					outputSlice = append(outputSlice, iVal)
+				}
+			}
+			outMap[fieldName] = outputSlice
+		}
+	}
+	return
 }
 
 func cast(inMap map[string]string, target interface{}, fieldNamer fieldNamer, fieldRenamer fieldNamer) (outMap map[string]interface{}) {
