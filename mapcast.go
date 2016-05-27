@@ -25,24 +25,12 @@ func (m *MapCaster) TimeFormat(format string) {
 	m.timeFormat = format
 }
 
-func (m *MapCaster) StdInput() {
-	m.inputNamer = stdFieldNamer
+func (m *MapCaster) Input(namer fieldNamer) {
+	m.inputNamer = namer
 }
 
-func (m *MapCaster) StdOutput() {
-	m.outputNamer = stdFieldNamer
-}
-
-func (m *MapCaster) JsonInput() {
-	m.inputNamer = jsonFieldNamer
-}
-
-func (m *MapCaster) BsonOutput() {
-	m.outputNamer = bsonFieldNamer
-}
-
-func (m *MapCaster) ProtoInput() {
-	m.inputNamer = protoFieldNamer
+func (m *MapCaster) Output(namer fieldNamer) {
+	m.outputNamer = namer
 }
 
 func (m *MapCaster) Cast(inMap map[string]string, target interface{}) map[string]interface{} {
@@ -53,11 +41,28 @@ func (m *MapCaster) CastArrayValue(inMap map[string][]string, target interface{}
 	return castSlice(inMap, target, m.inputNamer, m.outputNamer)
 }
 
-func stdFieldNamer(field reflect.StructField) string {
+func StdFieldNamer(field reflect.StructField) string {
 	return field.Name
 }
 
-func jsonFieldNamer(field reflect.StructField) string {
+func DBFieldNamer(field reflect.StructField) string {
+	t := field.Tag.Get("db")
+	tArr := strings.Split(t, ",")
+
+	fieldName := field.Name
+
+	if len(tArr) > 0 && len(tArr[0]) > 0 {
+		switch tArr[0] {
+		case "-":
+			return ""
+		default:
+			return tArr[0]
+		}
+	}
+	return strings.ToLower(fieldName)
+}
+
+func JsonFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("json")
 	tArr := strings.Split(t, ",")
 
@@ -74,7 +79,7 @@ func jsonFieldNamer(field reflect.StructField) string {
 	return strings.ToLower(fieldName)
 }
 
-func bsonFieldNamer(field reflect.StructField) string {
+func BsonFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("bson")
 	tArr := strings.Split(t, ",")
 
@@ -86,7 +91,7 @@ func bsonFieldNamer(field reflect.StructField) string {
 	return strings.ToLower(fieldName)
 }
 
-func protoFieldNamer(field reflect.StructField) string {
+func ProtoFieldNamer(field reflect.StructField) string {
 	t := field.Tag.Get("protobuf")
 	tArr := strings.Split(t, ",")
 
@@ -103,35 +108,35 @@ func protoFieldNamer(field reflect.StructField) string {
 }
 
 func Cast(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, stdFieldNamer, stdFieldNamer)
+	return cast(inMap, target, StdFieldNamer, StdFieldNamer)
 }
 
 func CastViaJson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonFieldNamer, stdFieldNamer)
+	return cast(inMap, target, JsonFieldNamer, StdFieldNamer)
 }
 
 func CastViaJsonToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, jsonFieldNamer, bsonFieldNamer)
+	return cast(inMap, target, JsonFieldNamer, BsonFieldNamer)
 }
 
 func CastViaProtoToBson(inMap map[string]string, target interface{}) (outMap map[string]interface{}) {
-	return cast(inMap, target, protoFieldNamer, bsonFieldNamer)
+	return cast(inMap, target, ProtoFieldNamer, BsonFieldNamer)
 }
 
 func CastMultiple(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
-	return castSlice(inMap, target, stdFieldNamer, stdFieldNamer)
+	return castSlice(inMap, target, StdFieldNamer, StdFieldNamer)
 }
 
 func CastMultipleViaJson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
-	return castSlice(inMap, target, jsonFieldNamer, stdFieldNamer)
+	return castSlice(inMap, target, JsonFieldNamer, StdFieldNamer)
 }
 
 func CastMultipleViaJsonToBson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
-	return castSlice(inMap, target, jsonFieldNamer, bsonFieldNamer)
+	return castSlice(inMap, target, JsonFieldNamer, BsonFieldNamer)
 }
 
 func CastMultipleViaProtoToBson(inMap map[string][]string, target interface{}) (outMap map[string][]interface{}) {
-	return castSlice(inMap, target, protoFieldNamer, bsonFieldNamer)
+	return castSlice(inMap, target, ProtoFieldNamer, BsonFieldNamer)
 }
 
 func castSlice(inMap map[string][]string, target interface{}, fieldNamer fieldNamer, fieldRenamer fieldNamer) (outMap map[string][]interface{}) {

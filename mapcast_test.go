@@ -24,8 +24,8 @@ func TestStdMapCast(t *testing.T) {
 	}
 
 	caster := NewMapCaster()
-	caster.StdInput()
-	caster.StdOutput()
+	caster.Input(StdFieldNamer)
+	caster.Output(StdFieldNamer)
 
 	targetStruct := inputStruct{}
 	outputMap := caster.Cast(inputData, &targetStruct)
@@ -62,8 +62,8 @@ func TestJsonToBsonMapCast(t *testing.T) {
 	}
 
 	caster := NewMapCaster()
-	caster.JsonInput()
-	caster.BsonOutput()
+	caster.Input(JsonFieldNamer)
+	caster.Output(BsonFieldNamer)
 
 	targetStruct := inputStruct{}
 	outputMap := caster.Cast(inputData, &targetStruct)
@@ -100,8 +100,8 @@ func TestCastViaProtoToBson(t *testing.T) {
 	}
 
 	caster := NewMapCaster()
-	caster.ProtoInput()
-	caster.BsonOutput()
+	caster.Input(ProtoFieldNamer)
+	caster.Output(BsonFieldNamer)
 
 	targetStruct := inputStruct{}
 	outputMap := caster.Cast(inputData, &targetStruct)
